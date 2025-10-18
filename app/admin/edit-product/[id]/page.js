@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase/config'; // CORRECTED PATH
+import { db } from '@/lib/firebase/config';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { useRouter, useParams } from 'next/navigation';
 import { PlusCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
@@ -10,6 +10,7 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState({
     name: '', brand: '', category: '', description: '',
     price: '', amazonLink: '', flipkartLink: '', tags: '',
+    asin: '',
   });
   const [imageUrls, setImageUrls] = useState(['']);
   const [categories, setCategories] = useState([]);
@@ -20,7 +21,6 @@ export default function EditProductPage() {
 
   useEffect(() => {
     if (!id) return;
-
     const fetchData = async () => {
       try {
         const productDocRef = doc(db, 'products', id);
@@ -34,8 +34,7 @@ export default function EditProductPage() {
 
         const categoriesCollection = collection(db, 'categories');
         const categorySnapshot = await getDocs(categoriesCollection);
-        const categoriesList = categorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setCategories(categoriesList);
+        setCategories(categorySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
         setFormData({
           name: productData.name || '',
@@ -46,6 +45,7 @@ export default function EditProductPage() {
           amazonLink: Array.isArray(productData.amazonLink) ? productData.amazonLink.join(', ') : '',
           flipkartLink: Array.isArray(productData.flipkartLink) ? productData.flipkartLink.join(', ') : '',
           tags: Array.isArray(productData.tags) ? productData.tags.join(', ') : '',
+          asin: productData.asin || '',
         });
         setImageUrls(productData.imageUrl && productData.imageUrl.length > 0 ? productData.imageUrl : ['']);
       } catch (err) {
@@ -55,7 +55,6 @@ export default function EditProductPage() {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [id]);
 
@@ -94,12 +93,13 @@ export default function EditProductPage() {
         imageUrl: validImageUrls,
         amazonLink: formData.amazonLink.split(',').map(url => url.trim()).filter(Boolean),
         flipkartLink: formData.flipkartLink.split(',').map(url => url.trim()).filter(Boolean),
+        asin: formData.asin,
       });
       
       router.push('/admin');
     } catch (err) {
       setError(err.message);
-      console.error(err);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -107,12 +107,10 @@ export default function EditProductPage() {
   if (isLoading) return <p className="text-center">Loading product...</p>;
   if (error) return <p className="text-center text-red-500">{error}</p>;
 
-  // ... (rest of the component's JSX remains the same)
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6">Edit Product</h1>
       <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded-lg shadow-lg max-w-2xl mx-auto">
-         {/* Form fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <input name="name" value={formData.name} onChange={handleChange} placeholder="Product Name" required className="bg-gray-700 p-3 rounded"/>
           <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Brand" required className="bg-gray-700 p-3 rounded"/>
@@ -121,8 +119,10 @@ export default function EditProductPage() {
             {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
           </select>
           <input name="price" value={formData.price} onChange={handleChange} placeholder="Price" type="number" required className="bg-gray-700 p-3 rounded"/>
+          <input name="asin" value={formData.asin} onChange={handleChange} placeholder="Amazon ASIN (Optional)" className="md:col-span-2 bg-gray-700 p-3 rounded"/>
           <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required className="md:col-span-2 bg-gray-700 p-3 rounded h-24 resize-y"/>
         </div>
+
         <div className="mb-6">
           <label className="block text-gray-300 text-sm font-bold mb-2">Image URLs</label>
           {imageUrls.map((url, index) => (
@@ -133,11 +133,14 @@ export default function EditProductPage() {
           ))}
           <button type="button" onClick={addImageUrlInput} className="flex items-center gap-2 text-blue-400 hover:text-blue-500 mt-2"><PlusCircleIcon className="h-6 w-6" /> Add Image URL</button>
         </div>
+        
         <div className="space-y-6">
           <textarea name="amazonLink" value={formData.amazonLink} onChange={handleChange} placeholder="Amazon Links (comma-separated)" className="w-full bg-gray-700 p-3 rounded h-24 resize-y"/>
           <textarea name="flipkartLink" value={formData.flipkartLink} onChange={handleChange} placeholder="Flipkart Links (comma-separated)" className="w-full bg-gray-700 p-3 rounded h-24 resize-y"/>
+          {/* THIS IS THE CORRECTED LINE */}
           <input name="tags" value={formData.tags} onChange={handleChange} placeholder="Tags (comma-separated)" className="w-full bg-gray-700 p-3 rounded"/>
         </div>
+
         <button type="submit" disabled={isLoading} className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded disabled:bg-gray-500">
           {isLoading ? 'Updating...' : 'Update Product'}
         </button>
