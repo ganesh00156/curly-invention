@@ -37,10 +37,18 @@ export default function AddProductPage() {
         throw new Error('Price must be a valid number.');
       }
       
-      // Trim and split the URL strings into arrays
       const imageUrls = formData.imageUrl.split(',').map(url => url.trim());
       const amazonLinks = formData.amazonLink.split(',').map(url => url.trim());
       const flipkartLinks = formData.flipkartLink.split(',').map(url => url.trim());
+
+      // **NEW: URL Validation Logic**
+      const allUrls = [...imageUrls, ...amazonLinks, ...flipkartLinks];
+      for (const url of allUrls) {
+        // Simple check to ensure it starts with http
+        if (!url.startsWith('http')) {
+          throw new Error(`Invalid URL found: "${url}". Please ensure all URLs are complete.`);
+        }
+      }
 
       await addDoc(collection(db, 'products'), {
         name: formData.name,
@@ -55,7 +63,6 @@ export default function AddProductPage() {
         createdAt: serverTimestamp(),
       });
       
-      // Redirect to the admin dashboard on success
       router.push('/admin');
 
     } catch (err) {
@@ -71,14 +78,12 @@ export default function AddProductPage() {
       <h1 className="text-3xl font-bold mb-6">Add New Product</h1>
       <form onSubmit={handleSubmit} className="bg-gray-800 p-8 rounded-lg shadow-lg max-w-2xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Form fields */}
           <input name="name" value={formData.name} onChange={handleChange} placeholder="Product Name" required className="bg-gray-700 p-3 rounded"/>
           <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Brand" required className="bg-gray-700 p-3 rounded"/>
           <input name="category" value={formData.category} onChange={handleChange} placeholder="Category" required className="bg-gray-700 p-3 rounded"/>
           <input name="price" value={formData.price} onChange={handleChange} placeholder="Price" type="number" required className="bg-gray-700 p-3 rounded"/>
           <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" required className="md:col-span-2 bg-gray-700 p-3 rounded h-24"/>
           
-          {/* Changed inputs to textareas for multiple URLs */}
           <textarea name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="Image URLs (comma-separated)" required className="md:col-span-2 bg-gray-700 p-3 rounded h-24"/>
           <textarea name="amazonLink" value={formData.amazonLink} onChange={handleChange} placeholder="Amazon Links (comma-separated)" required className="md:col-span-2 bg-gray-700 p-3 rounded h-24"/>
           <textarea name="flipkartLink" value={formData.flipkartLink} onChange={handleChange} placeholder="Flipkart Links (comma-separated)" required className="md:col-span-2 bg-gray-700 p-3 rounded h-24"/>

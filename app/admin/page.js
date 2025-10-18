@@ -26,28 +26,43 @@ export default async function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {products.map(product => (
-              <tr key={product.id} className="border-b border-gray-700 last:border-b-0">
-                <td className="p-4">
-                  {/* We now safely access the first image of the array */}
-                  {product.imageUrl && product.imageUrl.length > 0 && (
-                    <Image 
-                      src={product.imageUrl[0]} 
-                      alt={product.name} 
-                      width={60} 
-                      height={60} 
-                      className="rounded object-contain bg-white p-1"
-                    />
-                  )}
-                </td>
-                <td className="p-4 font-medium">{product.name}</td>
-                <td className="p-4">₹{product.price.toLocaleString('en-IN')}</td>
-                <td className="p-4">
-                  {/* Future actions like Edit/Delete can go here */}
-                  <button className="text-red-500 hover:text-red-700">Delete</button>
-                </td>
-              </tr>
-            ))}
+            {products.map(product => {
+              // **ROBUSTNESS FIX:** Check if the first image URL is valid before rendering.
+              // It ensures the URL is a string and starts with 'http'.
+              const imageUrl = product.imageUrl && 
+                               product.imageUrl.length > 0 && 
+                               typeof product.imageUrl[0] === 'string' && 
+                               product.imageUrl[0].startsWith('http')
+                ? product.imageUrl[0]
+                : null; // Set to null if the URL is invalid.
+
+              return (
+                <tr key={product.id} className="border-b border-gray-700 last:border-b-0">
+                  <td className="p-4">
+                    {/* Render the image only if the URL is valid */}
+                    {imageUrl ? (
+                      <Image 
+                        src={imageUrl} 
+                        alt={product.name} 
+                        width={60} 
+                        height={60} 
+                        className="rounded object-contain bg-white p-1"
+                      />
+                    ) : (
+                      // Display a placeholder if the URL is invalid or missing
+                      <div className="w-[60px] h-[60px] flex items-center justify-center bg-gray-700 rounded text-xs text-gray-400">
+                        Invalid Image
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-4 font-medium">{product.name}</td>
+                  <td className="p-4">₹{product.price.toLocaleString('en-IN')}</td>
+                  <td className="p-4">
+                    <button className="text-red-500 hover:text-red-700">Delete</button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
