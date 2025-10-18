@@ -3,20 +3,32 @@ import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 import ProductImageGallery from '../../../components/ProductImageGallery';
 
-// Server-side function to get a single product by its ID
-async function getProduct(id) {
-  const docRef = doc(db, 'products', id);
-  const docSnap = await getDoc(docRef);
+// **UPDATED:** Now fetches both product and its category name
+async function getProductAndCategory(id) {
+  const productRef = doc(db, 'products', id);
+  const productSnap = await getDoc(productRef);
 
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() };
-  } else {
-    return null;
+  if (!productSnap.exists()) {
+    return { product: null, category: null };
   }
+  
+  const product = { id: productSnap.id, ...productSnap.data() };
+  
+  let category = null;
+  // Check if there is a category ID to fetch
+  if (product.category) {
+    const categoryRef = doc(db, 'categories', product.category);
+    const categorySnap = await getDoc(categoryRef);
+    if (categorySnap.exists()) {
+      category = { id: categorySnap.id, ...categorySnap.data() };
+    }
+  }
+
+  return { product, category };
 }
 
 export default async function ProductPage({ params }) {
-  const product = await getProduct(params.id);
+  const { product, category } = await getProductAndCategory(params.id);
 
   if (!product) {
     return (
@@ -38,7 +50,6 @@ export default async function ProductPage({ params }) {
     maximumFractionDigits: 0,
   });
 
-  // **FIX:** This logic ensures the props are always in the correct format.
   const imageUrls = Array.isArray(product.imageUrl) ? product.imageUrl : [product.imageUrl];
   const amazonLink = Array.isArray(product.amazonLink) ? product.amazonLink[0] : product.amazonLink;
   const flipkartLink = Array.isArray(product.flipkartLink) ? product.flipkartLink[0] : product.flipkartLink;
@@ -46,15 +57,23 @@ export default async function ProductPage({ params }) {
   return (
     <main className="bg-white">
       <div className="container mx-auto px-4 py-8">
+          {/* **UPDATED BREADCRUMBS** */}
           <nav className="text-sm text-gray-500 mb-6">
             <Link href="/" className="hover:text-gray-800">Home</Link>
+            {category && (
+              <>
+                <span className="mx-2">/</span>
+                <Link href={`/categories/${category.id}`} className="hover:text-gray-800">
+                  {category.name}
+                </Link>
+              </>
+            )}
             <span className="mx-2">/</span>
             <span className="font-semibold text-gray-700">{product.name}</span>
           </nav>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
           <div className="flex justify-center items-start">
-             {/* We now pass the sanitized imageUrls array */}
              <ProductImageGallery images={imageUrls} />
           </div>
 
@@ -74,7 +93,7 @@ export default async function ProductPage({ params }) {
                 href={amazonLink || '#'} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-center w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-700 transition-colors uppercase tracking-wider"
+                className="text-center w-full bg-yellow-400 text-gray-800 font-bold py-3 px-6 rounded-md hover:bg-yellow-500 transition-colors uppercase tracking-wider"
               >
                 Buy on Amazon
               </Link>
@@ -82,7 +101,7 @@ export default async function ProductPage({ params }) {
                 href={flipkartLink || '#'}
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-center w-full border-2 border-gray-300 text-gray-800 font-bold py-3 px-6 rounded-md hover:bg-gray-100 transition-colors uppercase tracking-wider"
+                className="text-center w-full bg-blue-500 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-600 transition-colors uppercase tracking-wider"
               >
                 Buy on Flipkart
               </Link>
@@ -90,7 +109,7 @@ export default async function ProductPage({ params }) {
 
             <div className="mt-10 pt-6 border-t">
                  <h3 className="font-bold text-lg text-gray-800 mb-3">Product Details</h3>
-                 <p className="text-gray-600 leading-relaxed">{product.description}</p>
+                 <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{product.description}</p>
             </div>
           </div>
         </div>
