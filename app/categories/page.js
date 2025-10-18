@@ -21,15 +21,19 @@ export default async function CategoriesPage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
           {categories.map(category => (
             <Link key={category.id} href={`/categories/${category.id}`} className="group text-center">
-              <div className="relative w-full aspect-square rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-indigo-500 transition-all duration-300 transform group-hover:scale-105">
-                <Image 
-                  src={category.image}
-                  alt={category.name}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                />
+              <div className="relative w-full aspect-square rounded-full overflow-hidden border-2 bg-gray-100 border-gray-200 group-hover:border-blue-500 transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center">
+                {category.image ? (
+                  <Image 
+                    src={category.image}
+                    alt={category.name}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span className="font-bold text-lg text-gray-500">{category.name.charAt(0)}</span>
+                )}
               </div>
-              <h3 className="mt-4 font-semibold text-lg text-gray-800 group-hover:text-indigo-600">{category.name}</h3>
+              <h3 className="mt-4 font-semibold text-lg text-gray-800 group-hover:text-blue-600">{category.name}</h3>
             </Link>
           ))}
         </div>

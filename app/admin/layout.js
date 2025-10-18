@@ -27,7 +27,10 @@ export default function AdminLayout({ children }) {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link href="/admin" className="text-2xl font-bold">Admin Panel</Link>
-            <div>
+            <div className="flex items-center gap-4">
+              <Link href="/admin/add-category" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Add Category
+              </Link>
               <Link href="/admin/add-product" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                 Add Product
               </Link>
